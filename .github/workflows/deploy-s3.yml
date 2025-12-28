@@ -61,4 +61,4 @@ jobs:
 
       - name: Upload website files to S3
         run: |
-          aws s3 sync public/ s3://my-static-website-12345/ --delete
+          aws s3 sync public/ s3://my-static-islam-website-12345/ --delete
