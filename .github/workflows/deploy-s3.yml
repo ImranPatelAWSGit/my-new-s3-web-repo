@@ -1,0 +1,60 @@
+name: Deploy Static Website to S3
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{secrets.AWS_ROLE_ARN}}
+          aws-region: ap-south-1
+
+      - name: Create S3 bucket (if not exists)
+        run: |
+          BUCKET_NAME=my-static-islam-website-12345
+          aws s3api head-bucket --bucket $BUCKET_NAME 2>/dev/null || \
+          aws s3api create-bucket \
+            --bucket $BUCKET_NAME \
+            --region ap-south-1 \
+            --create-bucket-configuration LocationConstraint=ap-south-1
+
+      - name: Enable static website hosting
+        run: |
+          aws s3 website s3://my-static-islam-website-12345/ \
+            --index-document index.html \
+            --error-document error.html
+
+      - name: Set bucket public policy
+        run: |
+          cat <<EOF > bucket-policy.json
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "PublicReadGetObject",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "s3:GetObject",
+                "Resource": "arn:aws:s3:::my-static-islam-website-12345/*"
+              }
+            ]
+          }
+          EOF
+
+          aws s3api put-bucket-policy \
+            --bucket my-static-islam-website-12345 \
+            --policy file://bucket-policy.json
+
+      - name: Upload website files to S3
+        run: |
+          aws s3 sync public/ s3://my-static-website-12345/ --delete
