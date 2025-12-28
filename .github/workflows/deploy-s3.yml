@@ -31,6 +31,12 @@ jobs:
             --bucket $BUCKET_NAME \
             --region ap-south-1 \
             --create-bucket-configuration LocationConstraint=ap-south-1
+      
+      - name: Disable S3 Block Public Access
+        run: |
+          aws s3api put-public-access-block \
+            --bucket my-static-islam1-website-12345 \
+            --public-access-block-configuration "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
 
       - name: Enable static website hosting
         run: |
